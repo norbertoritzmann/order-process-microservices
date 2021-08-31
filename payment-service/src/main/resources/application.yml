@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: payment-service
+  cloud:
+    function:
+      definition: processPayment
+    stream:
+      bindings:
+        processPayment-in-0:
+          destination: order-to-payment-exchange
+          group: payment-processors
+          binder: rabbit_broker
+        processPayment-out-0:
+          destination: order-to-shipment-exchange
+          binder: rabbit_broker
+      binders:
+        rabbit_broker:
+          type: rabbit
+          environment:
+            spring:
+              rabbit:
+                host: localhost
+                port: 5672
+                username: guest
+                password: guest
+
+server:
+  port: ${PORT:2225}

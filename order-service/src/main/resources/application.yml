@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: order-service
+  cloud:
+    function:
+      definition: receiveSuccessfulProcessEndInput
+    stream:
+      bindings:
+        orderPayment-out-0:
+          destination: order-to-payment-exchange
+          binder: rabbit_broker
+        receiveSuccessfulProcessEndInput-in-0:
+          destination: order-process-finished-topic
+          group: finished-order-processors
+          binder: rabbit_broker
+      binders:
+        rabbit_broker:
+          type: rabbit
+          environment:
+            spring:
+              rabbit:
+                host: localhost
+                port: 5672
+                username: guest
+                password: guest
+
+server:
+  port: ${PORT:2222}

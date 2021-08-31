@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: shipment-service
+  cloud:
+    function:
+      definition: processShipment
+    stream:
+      bindings:
+        processShipment-in-0:
+          destination: order-to-shipment-exchange
+          group: shipment-processors
+          binder: rabbit_broker
+        processShipment-out-0:
+          destination: order-process-finished-topic
+          binder: rabbit_broker
+      binders:
+        rabbit_broker:
+          type: rabbit
+          environment:
+            spring:
+              rabbit:
+                host: localhost
+                port: 5672
+                username: guest
+                password: guest
+
+server:
+  port: ${PORT:2224}
+
+resilience4j.circuitbreaker:
+  instances:
+    backendA:
+      registerHealthIndicator: true
+      slidingWindowSize: 100
+    backendB:
+      registerHealthIndicator: true
+      slidingWindowSize: 10
+      permittedNumberOfCallsInHalfOpenState: 3
+      slidingWindowType: TIME_BASED
+      minimumNumberOfCalls: 20
+      waitDurationInOpenState: 50s
+      failureRateThreshold: 50
+      eventConsumerBufferSize: 10
+
+resilience4j.retry:
+  instances:
+    shipment:
+      maxAttempts: 5
+      waitDuration: 5s
+      enableExponentialBackoff: true
+      exponentialBackoffMultiplier: 2
+      retryExceptions:
+        - org.springframework.web.client.HttpServerErrorException
+        - java.io.IOException
+
+resilience4j.bulkhead:
+  instances:
+    shipment:
+      maxWaitDuration: 10ms
+      maxConcurrentCalls: 20
